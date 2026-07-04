@@ -119,8 +119,7 @@ func _build_optic_buttons() -> void:
 		button.toggle_mode = true
 		button.text = OPTIC_LABELS.get(optic_name, optic_name.to_upper())
 		button.custom_minimum_size = Vector2(92, 34)
-		button.pressed.connect(func() -> void:
-			LoadoutManager.set_optic(_shown_path(), optic_name))
+		button.pressed.connect(_on_optic_pressed.bind(optic_name))
 		row.add_child(button)
 		_optic_buttons[optic_name] = button
 
@@ -134,21 +133,56 @@ func _build_attachment_toggles() -> void:
 	header.add_theme_font_size_override("font_size", 18)
 	container.add_child(header)
 
-	for attachment_name: String in ATTACHMENT_LABELS:
-		var row := HBoxContainer.new()
-		container.add_child(row)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	container.add_child(grid)
 
-		var row_label := Label.new()
-		row_label.text = ATTACHMENT_LABELS[attachment_name]
-		row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row_label.add_theme_font_size_override("font_size", 15)
-		row.add_child(row_label)
-
-		var toggle := CheckButton.new()
-		toggle.toggled.connect(func(_on: bool) -> void:
-			LoadoutManager.toggle_attachment(_shown_path(), attachment_name))
-		row.add_child(toggle)
+	for attachment in LoadoutManager.ATTACHMENT_NAMES:
+		var attachment_name := String(attachment)
+		var toggle := Button.new()
+		toggle.toggle_mode = true
+		toggle.text = ATTACHMENT_LABELS.get(attachment_name, attachment_name.to_upper())
+		toggle.custom_minimum_size = Vector2(136, 36)
+		toggle.pressed.connect(_on_attachment_pressed.bind(attachment_name))
+		grid.add_child(toggle)
 		_attachment_toggles[attachment_name] = toggle
+
+
+func _on_optic_pressed(optic_name: String) -> void:
+	LoadoutManager.set_optic(_shown_path(), optic_name)
+	_refresh()
+
+
+func _on_attachment_pressed(attachment_name: String) -> void:
+	LoadoutManager.toggle_attachment(_shown_path(), attachment_name)
+
+
+func _style_toggle_button(button: Button, selected: bool) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.055, 0.058, 0.065, 0.92)
+	normal.border_color = Color(0.16, 0.16, 0.17)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(4)
+
+	var active := StyleBoxFlat.new()
+	active.bg_color = Color(0.18, 0.14, 0.035, 0.98)
+	active.border_color = ACCENT
+	active.set_border_width_all(2)
+	active.set_corner_radius_all(4)
+
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(0.10, 0.10, 0.105, 0.98)
+	hover.border_color = Color(0.36, 0.32, 0.18)
+	hover.set_border_width_all(1)
+	hover.set_corner_radius_all(4)
+
+	button.add_theme_stylebox_override("normal", active if selected else normal)
+	button.add_theme_stylebox_override("pressed", active)
+	button.add_theme_stylebox_override("hover", active if selected else hover)
+	button.add_theme_color_override("font_color", ACCENT if selected else Color(0.82, 0.82, 0.84))
+	button.add_theme_color_override("font_pressed_color", ACCENT)
 
 
 func _update_card_highlights() -> void:
@@ -199,33 +233,38 @@ func _update_stat_bars(weapon: WeaponData) -> void:
 		_stat_bars[i].value = values[i]
 
 
-## ---------- optic alignment (edit gun) ----------
+## ---------- optic / barrel alignment (edit gun) ----------
 
 const ALIGN_STEP := 0.004
+const TRIM_STEP := 0.5
 
 
 func _build_align_controls() -> void:
 	var container := stats_box.get_parent()
 
 	var header := Label.new()
-	header.text = "EDIT GUN — OPTIC"
+	header.text = "EDIT GUN - ALIGN"
 	header.add_theme_color_override("font_color", ACCENT)
 	header.add_theme_font_size_override("font_size", 18)
 	container.add_child(header)
 
 	var hint := Label.new()
-	hint.text = "Nudge the sight if it doesn't\nsit right on this weapon."
+	hint.text = "Nudge the optic or barrel\nuntil ADS sits on center."
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	hint.add_theme_font_size_override("font_size", 13)
 	container.add_child(hint)
 
-	container.add_child(_align_row("HEIGHT", Vector3(0, -ALIGN_STEP, 0), Vector3(0, ALIGN_STEP, 0)))
-	container.add_child(_align_row("DEPTH", Vector3(0, 0, ALIGN_STEP), Vector3(0, 0, -ALIGN_STEP)))
+	container.add_child(_align_row("SIGHT X", Vector3(-ALIGN_STEP, 0, 0), Vector3(ALIGN_STEP, 0, 0)))
+	container.add_child(_align_row("SIGHT Y", Vector3(0, -ALIGN_STEP, 0), Vector3(0, ALIGN_STEP, 0)))
+	container.add_child(_align_row("SIGHT Z", Vector3(0, 0, ALIGN_STEP), Vector3(0, 0, -ALIGN_STEP)))
+	container.add_child(_trim_row("BARREL PITCH", Vector3(-TRIM_STEP, 0, 0), Vector3(TRIM_STEP, 0, 0)))
+	container.add_child(_trim_row("BARREL YAW", Vector3(0, -TRIM_STEP, 0), Vector3(0, TRIM_STEP, 0)))
 
 	var reset := Button.new()
 	reset.text = "RESET ALIGNMENT"
 	reset.pressed.connect(func() -> void:
 		LoadoutManager.set_optic_offset(_shown_path(), Vector3.ZERO)
+		LoadoutManager.set_aim_trim(_shown_path(), Vector3.ZERO)
 		_refresh())
 	container.add_child(reset)
 
@@ -240,7 +279,7 @@ func _align_row(label_text: String, minus_delta: Vector3, plus_delta: Vector3) -
 	row_label.add_theme_font_size_override("font_size", 14)
 	row.add_child(row_label)
 
-	for pair in [["–", minus_delta], ["+", plus_delta]]:
+	for pair in [["-", minus_delta], ["+", plus_delta]]:
 		var button := Button.new()
 		button.text = pair[0]
 		button.custom_minimum_size = Vector2(56, 0)
@@ -248,6 +287,29 @@ func _align_row(label_text: String, minus_delta: Vector3, plus_delta: Vector3) -
 		button.pressed.connect(func() -> void:
 			var path := _shown_path()
 			LoadoutManager.set_optic_offset(path, LoadoutManager.get_optic_offset(path) + delta)
+			_refresh())
+		row.add_child(button)
+	return row
+
+
+func _trim_row(label_text: String, minus_delta: Vector3, plus_delta: Vector3) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+
+	var row_label := Label.new()
+	row_label.text = label_text
+	row_label.custom_minimum_size = Vector2(100, 0)
+	row_label.add_theme_font_size_override("font_size", 14)
+	row.add_child(row_label)
+
+	for pair in [["-", minus_delta], ["+", plus_delta]]:
+		var button := Button.new()
+		button.text = pair[0]
+		button.custom_minimum_size = Vector2(56, 0)
+		var delta: Vector3 = pair[1]
+		button.pressed.connect(func() -> void:
+			var path := _shown_path()
+			LoadoutManager.set_aim_trim(path, LoadoutManager.get_aim_trim(path) + delta)
 			_refresh())
 		row.add_child(button)
 	return row
@@ -298,4 +360,24 @@ func _build_preview_viewport() -> void:
 	_viewport.add_child(_preview_holder)
 
 
-func _update_preview(weapon: WeaponData, fitted := PackedStringArray(
+func _update_preview(weapon: WeaponData, fitted := PackedStringArray()) -> void:
+	var previous_yaw := 0.6
+	if _preview_rig != null:
+		previous_yaw = _preview_rig.rotation.y
+		_preview_rig.queue_free()
+	_preview_rig = ViewmodelRig.new()
+	_preview_rig.body_part = weapon.body_part
+	_preview_rig.keep_parts = weapon.keep_parts
+	_preview_rig.scope_part = weapon.scope_part
+	_preview_rig.build_optic = weapon.build_optic
+	_preview_rig.optic_type = LoadoutManager.get_optic(weapon.resource_path)
+	_preview_rig.optic_offset = LoadoutManager.get_optic_offset(weapon.resource_path)
+	_preview_rig.aim_trim_deg = LoadoutManager.get_aim_trim(weapon.resource_path)
+	_preview_rig.attachments = fitted
+	_preview_rig.target_length = 0.8
+	_preview_rig.flip_forward = weapon.flip_forward
+	_preview_rig.rotation.y = previous_yaw
+	_preview_rig.add_child(load(weapon.model_path).instantiate())
+	_preview_holder.add_child(_preview_rig)
+	# The rig animates itself for first-person; the preview only rotates.
+	_preview_rig.set_process(false)

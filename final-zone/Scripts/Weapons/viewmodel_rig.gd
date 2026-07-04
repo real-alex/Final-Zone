@@ -50,6 +50,7 @@ func _ready() -> void:
 	_rest_position = position
 	_rest_rotation = rotation
 
+	_clear_generated_nodes()
 	var model := _first_model_child()
 	if model == null:
 		return
@@ -58,7 +59,6 @@ func _ready() -> void:
 	# fit into the scene (this script is @tool), so start from identity
 	# and drop any optic built by an earlier run.
 	model.transform = Transform3D.IDENTITY
-	_clear_generated_nodes()
 
 	var branches := _collect_part_branches(model)
 	if body_part != "" and branches.has(body_part):
@@ -158,6 +158,7 @@ func _first_model_child() -> Node3D:
 			child is Node3D
 			and child.name != "BuiltOptic"
 			and not String(child.name).begins_with("Attachment")
+			and not String(child.name).begins_with("Stale")
 		):
 			return child
 	return null

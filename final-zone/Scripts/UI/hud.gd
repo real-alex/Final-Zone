@@ -5,7 +5,9 @@ extends CanvasLayer
 
 const KILL_FEED_LIFETIME := 4.0
 const KILL_FEED_MAX_ENTRIES := 5
+const SCOPE_OVERLAY := preload("res://Scripts/UI/scope_overlay.gd")
 
+@onready var root: Control = $Root
 @onready var health_bar: ProgressBar = %HealthBar
 @onready var health_label: Label = %HealthLabel
 @onready var stamina_bar: ProgressBar = %StaminaBar
@@ -19,9 +21,12 @@ const KILL_FEED_MAX_ENTRIES := 5
 @onready var damage_vignette: ColorRect = %DamageVignette
 
 var _vignette_tween: Tween
+var _scope_overlay: SniperScopeOverlay
 
 
 func _ready() -> void:
+	_scope_overlay = SCOPE_OVERLAY.new()
+	root.add_child(_scope_overlay)
 	respawn_label.hide()
 	damage_vignette.material.set_shader_parameter("intensity", 0.0)
 
@@ -55,6 +60,11 @@ func set_crosshair_spread(pixels: float) -> void:
 
 func set_crosshair_visible(shown: bool) -> void:
 	crosshair.visible = shown
+
+
+func set_scope_view(fraction: float, optic_type: String) -> void:
+	if _scope_overlay != null:
+		_scope_overlay.set_scope_view(fraction, optic_type)
 
 
 func show_hit_marker(headshot: bool = false) -> void:

@@ -75,8 +75,10 @@ var _optics: Dictionary = {}
 func get_optic(weapon_path: String) -> String:
 	if _optics.has(weapon_path):
 		return _optics[weapon_path]
+	if weapon_path == "":
+		return "red_dot"
 	var weapon: WeaponData = load(weapon_path)
-	return "sniper" if weapon.category == 3 else "red_dot"
+	return "sniper" if weapon != null and weapon.category == 3 else "red_dot"
 
 
 func cycle_optic(weapon_path: String) -> void:
@@ -87,6 +89,8 @@ func cycle_optic(weapon_path: String) -> void:
 
 
 func set_optic(weapon_path: String, optic_type: String) -> void:
+	if weapon_path == "":
+		return
 	if not OPTIC_TYPES.has(optic_type):
 		return
 	if get_optic(weapon_path) == optic_type:

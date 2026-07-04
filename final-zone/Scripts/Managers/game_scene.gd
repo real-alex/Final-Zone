@@ -71,6 +71,10 @@ func _process(_delta: float) -> void:
 	if GameManager.is_gameplay_active():
 		hud.set_crosshair_spread(8.0 + weapon.get_current_spread_deg() * 6.0)
 		hud.set_crosshair_visible(weapon.get_aim_fraction() < 0.35 and player.health.alive)
+		var scope_fraction := weapon.get_scope_view_fraction() if player.health.alive else 0.0
+		hud.set_scope_view(scope_fraction, weapon.get_optic_type())
+	else:
+		hud.set_scope_view(0.0, "")
 
 
 func _unhandled_input(event: InputEvent) -> void:
