@@ -28,6 +28,9 @@ extends Node3D
 ## Fitted attachments, built procedurally so they work on any gun model:
 ## suppressor, foregrip, laser, extended_mag.
 @export var attachments := PackedStringArray()
+## Per-mount user position corrections (mount name -> Vector3):
+## "muzzle", "laser", "grip", "mag". The optic uses optic_offset.
+@export var mount_offsets: Dictionary = {}
 ## Set true if the model faces backwards after auto-fit.
 @export var flip_forward := false
 
@@ -456,12 +459,12 @@ func _build_attachments(rifle: Node3D) -> void:
 	metal.roughness = 0.5
 	metal.metallic = 0.4
 
-	var muzzle_socket := _socket_position(
+	var muzzle_socket: Vector3 = _socket_position(
 		rifle,
 		"MuzzleSocket",
 		Vector3(0.0, rifle_aabb.position.y + rifle_aabb.size.y * 0.62, rifle_aabb.position.z)
-	)
-	var laser_socket := _socket_position(
+	) + mount_offsets.get("muzzle", Vector3.ZERO)
+	var laser_socket: Vector3 = _socket_position(
 		rifle,
 		"LaserSocket",
 		Vector3(
@@ -469,8 +472,8 @@ func _build_attachments(rifle: Node3D) -> void:
 			rifle_aabb.position.y + rifle_aabb.size.y * 0.62,
 			rifle_aabb.position.z + rifle_aabb.size.z * 0.30
 		)
-	)
-	var underbarrel_socket := _socket_position(
+	) + mount_offsets.get("laser", Vector3.ZERO)
+	var underbarrel_socket: Vector3 = _socket_position(
 		rifle,
 		"UnderbarrelSocket",
 		Vector3(
@@ -478,7 +481,7 @@ func _build_attachments(rifle: Node3D) -> void:
 			rifle_aabb.position.y - 0.03,
 			rifle_aabb.position.z + rifle_aabb.size.z * 0.30
 		)
-	)
+	) + mount_offsets.get("grip", Vector3.ZERO)
 
 	if attachments.has("suppressor"):
 		var suppressor := MeshInstance3D.new()
@@ -565,7 +568,7 @@ func _build_attachments(rifle: Node3D) -> void:
 				rifle,
 				"MagazineSocket",
 				Vector3(rifle_aabb.get_center().x, rifle_aabb.position.y - 0.05, rifle_aabb.get_center().z)
-			)
+			) + mount_offsets.get("mag", Vector3.ZERO)
 			add_child(mag_box)
 
 
@@ -601,12 +604,23 @@ func _find_socket(root: Node3D, socket_name: String) -> Node3D:
 	var stack: Array[Node] = [root]
 	while not stack.is_empty():
 		var node: Node = stack.pop_back()
-		if node is Node3D and names.has(String(node.name).to_lower()):
+		# Only pure marker nodes count: gun PARTS share names with sockets
+		# (the M4 has a "Scope" mesh branch) and their origins are wrong.
+		if node is Node3D and names.has(String(node.name).to_lower()) and not _has_mesh(node):
 			return node
 		for child in node.get_children():
 			if child is Node3D:
 				stack.push_back(child)
 	return null
+
+
+func _has_mesh(node: Node) -> bool:
+	if node is MeshInstance3D:
+		return true
+	for child in node.get_children():
+		if _has_mesh(child):
+			return true
+	return false
 
 
 func _socket_aliases(socket_name: String) -> PackedStringArray:
@@ -623,6 +637,45 @@ func _socket_aliases(socket_name: String) -> PackedStringArray:
 			return PackedStringArray(["magazinesocket", "magazine_socket", "mag", "magazine"])
 		_:
 			return PackedStringArray([socket_name.to_lower()])
+
+
+## Highlights every mesh belonging to a mount ("optic", "muzzle", "laser",
+## "grip", "mag") with a gold glow so the loadout editor shows what is
+## selected. Pass "" to clear.
+func highlight_mount(mount: String) -> void:
+	var highlight_material: StandardMaterial3D = null
+	if mount != "":
+		highlight_material = StandardMaterial3D.new()
+		highlight_material.albedo_color = Color(1.0, 0.706, 0.0, 0.35)
+		highlight_material.emission_enabled = true
+		highlight_material.emission = Color(1.0, 0.706, 0.0)
+		highlight_material.emission_energy_multiplier = 0.7
+		highlight_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		highlight_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		highlight_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var prefixes := {
+		"optic": ["BuiltOptic"],
+		"muzzle": ["AttachmentSuppressor"],
+		"laser": ["AttachmentLaser"],
+		"grip": ["AttachmentForegrip"],
+		"mag": ["AttachmentExtendedMag"],
+	}
+	for child in get_children():
+		var child_name := String(child.name)
+		if child_name.begins_with("Stale"):
+			continue
+		for mount_name: String in prefixes:
+			for prefix: String in prefixes[mount_name]:
+				if child_name.begins_with(prefix):
+					_set_overlay(child, highlight_material if mount_name == mount else null)
+
+
+func _set_overlay(node: Node, material: Material) -> void:
+	if node is MeshInstance3D:
+		node.material_overlay = material
+	for child in node.get_children():
+		_set_overlay(child, material)
 
 
 ## AABB of a branch in rig space, using live global transforms.
