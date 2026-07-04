@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://f0botview01"]
+
+[ext_resource type="PackedScene" path="res://Scenes/Enemies/bot.tscn" id="1_bot"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.13, 0.14, 0.16, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.8, 0.8, 0.85, 1)
+ambient_light_energy = 1.2
+
+[sub_resource type="BoxShape3D" id="floor_shape"]
+size = Vector3(20, 0.4, 20)
+
+[node name="BotView" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.906, -0.408, 0.11, 0, 0.259, 0.966, -0.423, -0.875, 0.235, 0, 3, 0)
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+
+[node name="FloorShape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="Bot" parent="." instance=ExtResource("1_bot")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.987, -0.023, 0.158, 0, 0.989, 0.148, -0.16, 0.146, -0.976, 0.45, 1.55, -2.7)

@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3 uid="uid://f0vmshot001"]
+
+[ext_resource type="Script" path="res://Tests/viewmodel_shot.gd" id="1_script"]
+[ext_resource type="Script" path="res://Scripts/Weapons/viewmodel_rig.gd" id="2_rig"]
+[ext_resource type="PackedScene" path="res://Assets/Weapons/m4_carbine_with_attachment_set.glb" id="3_m4"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.16, 0.17, 0.2, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.8, 0.8, 0.85, 1)
+ambient_light_energy = 1.1
+
+[node name="ViewmodelShot" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 2, 2)
+light_energy = 1.2
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 90.0
+near = 0.05
+
+[node name="WeaponHolder" type="Node3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, -0.22, -0.45)
+
+[node name="Viewmodel" type="Node3D" parent="Camera3D/WeaponHolder"]
+script = ExtResource("2_rig")
+scope_part = ""
+build_optic = true
+
+[node name="M4" parent="Camera3D/WeaponHolder/Viewmodel" instance=ExtResource("3_m4")]

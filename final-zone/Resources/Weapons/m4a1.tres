@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Weapons/weapon_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+display_name = "M4A1"
+category = 0
+fire_mode = 0
+model_path = "res://Assets/Weapons/m4_carbine_with_attachment_set.glb"
+body_part = "M4"
+keep_parts = PackedStringArray("Mag")
+scope_part = ""
+build_optic = true
+view_length = 0.85
+flip_forward = false
+pellets = 1
+damage = 25.0
+headshot_multiplier = 2.0
+max_range = 250.0
+fire_rate_rpm = 750.0
+magazine_size = 30
+reserve_ammo = 120
+reload_time = 2.2
+hip_spread_deg = 2.2
+ads_spread_deg = 0.12
+move_spread_add_deg = 1.4
+recoil_pitch_deg = 0.55
+recoil_yaw_deg = 0.3
+ads_time = 0.2
+ads_fov = 60.0
+fire_sound = "gunshot"
+reload_sound = "reload"

@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3 uid="uid://f0player001"]
+
+[ext_resource type="Script" path="res://Scripts/Player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://Scripts/Shared/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://Scripts/Weapons/weapon_controller.gd" id="3_weapon"]
+[ext_resource type="Resource" path="res://Resources/Weapons/m4a1.tres" id="4_m4data"]
+[ext_resource type="Resource" path="res://Resources/Weapons/cz_scorpion.tres" id="5_secondary"]
+[ext_resource type="Script" path="res://Scripts/Shared/soldier_rig.gd" id="7_charrig"]
+
+[sub_resource type="CapsuleShape3D" id="player_capsule"]
+radius = 0.35
+height = 1.8
+
+[node name="Player" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 5
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("player_capsule")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+
+[node name="Recoil" type="Node3D" parent="Head"]
+
+[node name="Camera3D" type="Camera3D" parent="Head/Recoil"]
+fov = 90.0
+near = 0.05
+
+[node name="WeaponHolder" type="Node3D" parent="Head/Recoil/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, -0.22, -0.45)
+script = ExtResource("3_weapon")
+primary = ExtResource("4_m4data")
+secondary = ExtResource("5_secondary")
+
+[node name="CharacterModel" type="Node3D" parent="."]
+script = ExtResource("7_charrig")
+shadow_only = true
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="UncrouchRay" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+target_position = Vector3(0, 0.95, 0)
+collision_mask = 1

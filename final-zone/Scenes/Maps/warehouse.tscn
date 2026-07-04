@@ -1,0 +1,123 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Maps/warehouse.gd" id="1_script"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.055, 0.06, 0.07, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.5, 0.52, 0.56, 1)
+ambient_light_energy = 0.9
+tonemap_mode = 2
+
+[sub_resource type="NavigationMesh" id="navmesh"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 2.0
+agent_radius = 0.5
+agent_max_climb = 0.5
+agent_max_slope = 46.0
+
+[node name="Warehouse" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.96, 0.44, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="Omni1" type="OmniLight3D" parent="Lights"]
+position = Vector3(-10, 5.4, -7)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.3
+omni_range = 16.0
+
+[node name="Omni2" type="OmniLight3D" parent="Lights"]
+position = Vector3(10, 5.4, -7)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.3
+omni_range = 16.0
+
+[node name="Omni3" type="OmniLight3D" parent="Lights"]
+position = Vector3(-10, 5.4, 7)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.3
+omni_range = 16.0
+
+[node name="Omni4" type="OmniLight3D" parent="Lights"]
+position = Vector3(10, 5.4, 7)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.3
+omni_range = 16.0
+
+[node name="NavRegion" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("navmesh")
+
+[node name="Geometry" type="Node3D" parent="NavRegion"]
+
+[node name="SpawnPoints" type="Node3D" parent="."]
+
+[node name="PlayerSpawns" type="Node3D" parent="SpawnPoints"]
+
+[node name="PSpawn1" type="Marker3D" parent="SpawnPoints/PlayerSpawns"]
+position = Vector3(0, 0.1, 12.5)
+
+[node name="PSpawn2" type="Marker3D" parent="SpawnPoints/PlayerSpawns"]
+position = Vector3(-15, 0.1, 10)
+rotation = Vector3(0, -0.6, 0)
+
+[node name="PSpawn3" type="Marker3D" parent="SpawnPoints/PlayerSpawns"]
+position = Vector3(15, 0.1, 10)
+rotation = Vector3(0, 0.6, 0)
+
+[node name="PSpawn4" type="Marker3D" parent="SpawnPoints/PlayerSpawns"]
+position = Vector3(-8, 0.1, 13)
+rotation = Vector3(0, -0.3, 0)
+
+[node name="BotSpawns" type="Node3D" parent="SpawnPoints"]
+
+[node name="BSpawn1" type="Marker3D" parent="SpawnPoints/BotSpawns"]
+position = Vector3(0, 0.1, -12.5)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="BSpawn2" type="Marker3D" parent="SpawnPoints/BotSpawns"]
+position = Vector3(-15, 0.1, -10)
+rotation = Vector3(0, 2.6, 0)
+
+[node name="BSpawn3" type="Marker3D" parent="SpawnPoints/BotSpawns"]
+position = Vector3(15, 0.1, -10)
+rotation = Vector3(0, -2.6, 0)
+
+[node name="BSpawn4" type="Marker3D" parent="SpawnPoints/BotSpawns"]
+position = Vector3(8, 0.1, -13)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="PatrolPoints" type="Node3D" parent="."]
+
+[node name="Patrol1" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(0, 0.1, -8)
+
+[node name="Patrol2" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(12, 0.1, -8)
+
+[node name="Patrol3" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(14, 0.1, 10)
+
+[node name="Patrol4" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(0, 0.1, 6)
+
+[node name="Patrol5" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(-14, 0.1, 10)
+
+[node name="Patrol6" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(-12, 0.1, -8)
+
+[node name="Patrol7" type="Marker3D" parent="PatrolPoints"]
+position = Vector3(0, 3.05, -12.8)

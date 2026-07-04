@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://f0boot00001"]
+
+[ext_resource type="Theme" path="res://Assets/UI/final_zone_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://Scripts/UI/boot_splash.gd" id="2_script"]
+
+[node name="Boot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.031, 0.031, 0.031, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StudioName" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 64
+text = "ALEXIONSTUDIOS"
+horizontal_alignment = 1
+
+[node name="Presents" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 20
+text = "P R E S E N T S"
+horizontal_alignment = 1

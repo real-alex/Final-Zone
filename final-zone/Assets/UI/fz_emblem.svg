@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <g fill="#FFB400">
+    <path d="M124 96 L18 26 L70 102 L116 118 Z"/>
+    <path d="M132 96 L238 26 L186 102 L140 118 Z"/>
+    <path d="M120 124 L44 98 L82 138 L114 144 Z"/>
+    <path d="M136 124 L212 98 L174 138 L142 144 Z"/>
+    <path d="M118 150 L66 138 L94 166 L114 168 Z"/>
+    <path d="M138 150 L190 138 L162 166 L142 168 Z"/>
+    <path d="M128 118 L142 132 L128 226 L114 132 Z"/>
+    <path d="M128 74 L141 92 L128 105 L115 92 Z"/>
+  </g>
+  <g fill="#C88E00">
+    <path d="M124 100 L60 58 L88 96 L116 112 Z" opacity="0.55"/>
+    <path d="M132 100 L196 58 L168 96 L140 112 Z" opacity="0.55"/>
+    <path d="M128 140 L134 146 L128 200 L122 146 Z" opacity="0.6"/>
+  </g>
+</svg>

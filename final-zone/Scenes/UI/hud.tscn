@@ -1,0 +1,190 @@
+[gd_scene format=3 uid="uid://f0hud000001"]
+
+[ext_resource type="Theme" path="res://Assets/UI/final_zone_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://Scripts/UI/hud.gd" id="2_script"]
+[ext_resource type="Script" path="res://Scripts/UI/crosshair.gd" id="3_crosshair"]
+[ext_resource type="Script" path="res://Scripts/UI/hit_marker.gd" id="4_hitmarker"]
+[ext_resource type="Shader" path="res://Shaders/damage_vignette.gdshader" id="5_shader"]
+
+[sub_resource type="ShaderMaterial" id="vignette_mat"]
+shader = ExtResource("5_shader")
+shader_parameter/intensity = 0.0
+
+[sub_resource type="StyleBoxFlat" id="sb_stamina_fill"]
+bg_color = Color(0.75, 0.75, 0.75, 0.9)
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("2_script")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_theme")
+
+[node name="DamageVignette" type="ColorRect" parent="Root"]
+unique_name_in_owner = true
+material = SubResource("vignette_mat")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="Crosshair" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_crosshair")
+
+[node name="HitMarker" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_hitmarker")
+
+[node name="BottomLeft" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -130.0
+offset_right = 400.0
+offset_bottom = -48.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="HealthRow" type="HBoxContainer" parent="Root/BottomLeft"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="HealthBar" type="ProgressBar" parent="Root/BottomLeft/HealthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 20)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="Root/BottomLeft/HealthRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "100"
+
+[node name="StaminaBar" type="ProgressBar" parent="Root/BottomLeft"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 6)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/fill = SubResource("sb_stamina_fill")
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="BottomRight" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -150.0
+offset_right = -48.0
+offset_bottom = -48.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="AmmoLabel" type="Label" parent="Root/BottomRight"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "30 / 120"
+horizontal_alignment = 2
+
+[node name="FireModeLabel" type="Label" parent="Root/BottomRight"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "AUTO"
+horizontal_alignment = 2
+
+[node name="ScoreLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 32.0
+offset_right = 220.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 26
+text = "YOU  0  -  0  BOT"
+horizontal_alignment = 1
+
+[node name="KillFeed" type="VBoxContainer" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -420.0
+offset_top = 40.0
+offset_right = -48.0
+offset_bottom = 240.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="RespawnLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -140.0
+offset_right = 250.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "RESPAWNING IN 3"
+horizontal_alignment = 1

@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Weapons/weapon_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+display_name = "SR-25"
+category = 2
+fire_mode = 1
+model_path = "res://Assets/Weapons/weapon_pack_of_10100_part_8.glb"
+body_part = "SR_25_Apply"
+keep_parts = PackedStringArray()
+scope_part = ""
+build_optic = true
+view_length = 0.98
+flip_forward = true
+pellets = 1
+damage = 48.0
+headshot_multiplier = 2.0
+max_range = 400.0
+fire_rate_rpm = 280.0
+magazine_size = 20
+reserve_ammo = 80
+reload_time = 2.5
+hip_spread_deg = 3.5
+ads_spread_deg = 0.06
+move_spread_add_deg = 2.0
+recoil_pitch_deg = 1.5
+recoil_yaw_deg = 0.5
+ads_time = 0.26
+ads_fov = 48.0
+fire_sound = "gunshot"
+reload_sound = "reload"

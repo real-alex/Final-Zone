@@ -1,0 +1,480 @@
+[gd_scene format=3 uid="uid://f0menu00001"]
+
+[ext_resource type="Theme" path="res://Assets/UI/final_zone_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://Scripts/UI/main_menu.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/fz_emblem.svg" id="3_emblem"]
+[ext_resource type="Script" path="res://Scripts/Shared/soldier_rig.gd" id="4_charrig"]
+[ext_resource type="Script" path="res://Scripts/Weapons/viewmodel_rig.gd" id="6_gunrig"]
+[ext_resource type="PackedScene" path="res://Assets/Weapons/m4_carbine_with_attachment_set.glb" id="7_m4model"]
+[ext_resource type="Script" path="res://Scripts/UI/menu_stage.gd" id="8_stage"]
+
+[sub_resource type="Environment" id="menu_env"]
+background_mode = 1
+background_color = Color(0.035, 0.038, 0.043, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.47, 0.52, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+
+[sub_resource type="StyleBoxFlat" id="sb_topbar"]
+content_margin_left = 32.0
+content_margin_top = 10.0
+content_margin_right = 32.0
+content_margin_bottom = 10.0
+bg_color = Color(0.04, 0.04, 0.045, 0.93)
+border_width_bottom = 2
+border_color = Color(1, 0.706, 0, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="sb_player_card"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.09, 0.09, 0.1, 1)
+border_width_left = 2
+border_color = Color(1, 0.706, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_big_play"]
+content_margin_left = 60.0
+content_margin_top = 16.0
+content_margin_right = 60.0
+content_margin_bottom = 16.0
+bg_color = Color(1, 0.706, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="sb_settings_bg"]
+bg_color = Color(0.018, 0.018, 0.02, 0.97)
+
+[sub_resource type="StyleBoxFlat" id="sb_section"]
+content_margin_left = 24.0
+content_margin_top = 18.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+bg_color = Color(0.055, 0.055, 0.06, 1)
+border_width_top = 2
+border_color = Color(1, 0.706, 0, 0.5)
+
+[node name="MainMenu" type="Control" unique_id=268114398]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Stage" type="Node3D" parent="." unique_id=62262796]
+script = ExtResource("8_stage")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Stage" unique_id=948523380]
+environment = SubResource("menu_env")
+
+[node name="MenuCamera" type="Camera3D" parent="Stage" unique_id=1795338439]
+unique_name_in_owner = true
+transform = Transform3D(0.9845, -0.011, 0.174, 0, 0.9975, 0.0634, -0.1743, -0.0624, 0.9825, 0.55, 1.35, 3.1)
+fov = 45.0
+
+[node name="KeyLight" type="SpotLight3D" parent="Stage" unique_id=1151312175]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 1.6, 2.6, 2.2)
+light_color = Color(1, 0.9, 0.75, 1)
+light_energy = 5.0
+spot_range = 8.0
+spot_angle = 32.0
+
+[node name="RimLight" type="OmniLight3D" parent="Stage" unique_id=608837858]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.4, 1.9, -1.2)
+light_color = Color(0.5, 0.65, 1, 1)
+light_energy = 2.2
+
+[node name="FillLight" type="OmniLight3D" parent="Stage" unique_id=2068847436]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 1.2, 0.6)
+light_color = Color(1, 0.85, 0.6, 1)
+light_energy = 0.8
+
+[node name="YardLight" type="SpotLight3D" parent="Stage" unique_id=1369623489]
+transform = Transform3D(1, 0, 0, 0, 0.259, 0.966, 0, -0.966, 0.259, 0, 5.6, -3.2)
+light_color = Color(1, 0.95, 0.8, 1)
+light_energy = 3.0
+spot_range = 9.0
+spot_angle = 50.0
+
+[node name="Character" type="Node3D" parent="Stage" unique_id=972471615]
+unique_name_in_owner = true
+transform = Transform3D(0.978, 0, -0.208, 0, 1, 0, 0.208, 0, 0.978, 0, 0, 0)
+script = ExtResource("4_charrig")
+yaw_offset_deg = 0.0
+initial_clip = "idle_aiming"
+
+[node name="SlungGun" type="Node3D" parent="Stage/Character" unique_id=2105247383]
+script = ExtResource("6_gunrig")
+target_length = 0.8
+keep_parts = PackedStringArray("Mag")
+
+[node name="M4" parent="Stage/Character/SlungGun" unique_id=1901646450 instance=ExtResource("7_m4model")]
+
+[node name="TopBar" type="PanelContainer" parent="." unique_id=421995368]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("sb_topbar")
+
+[node name="HBox" type="HBoxContainer" parent="TopBar" unique_id=1713434073]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Emblem" type="TextureRect" parent="TopBar/HBox" unique_id=1269273642]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+texture = ExtResource("3_emblem")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleBox" type="VBoxContainer" parent="TopBar/HBox" unique_id=1601995805]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Title" type="Label" parent="TopBar/HBox/TitleBox" unique_id=634729316]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "FINAL ZONE"
+
+[node name="Tagline" type="Label" parent="TopBar/HBox/TitleBox" unique_id=828187783]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 9
+text = "TACTICAL. TEAMWORK. VICTORY."
+
+[node name="NavSpacerL" type="Control" parent="TopBar/HBox" unique_id=2128170417]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="TopBar/HBox" unique_id=799439971]
+unique_name_in_owner = true
+layout_mode = 2
+text = "PLAY"
+
+[node name="LoadoutButton" type="Button" parent="TopBar/HBox" unique_id=1321790979]
+unique_name_in_owner = true
+layout_mode = 2
+text = "LOADOUT"
+
+[node name="CustomizeButton" type="Button" parent="TopBar/HBox" unique_id=304833104]
+layout_mode = 2
+disabled = true
+text = "CUSTOMIZE"
+
+[node name="SettingsButton" type="Button" parent="TopBar/HBox" unique_id=526603066]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SETTINGS"
+
+[node name="QuitButton" type="Button" parent="TopBar/HBox" unique_id=1047580292]
+unique_name_in_owner = true
+layout_mode = 2
+text = "QUIT"
+
+[node name="NavSpacerR" type="Control" parent="TopBar/HBox" unique_id=1679977491]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerCard" type="PanelContainer" parent="TopBar/HBox" unique_id=646242684]
+layout_mode = 2
+theme_override_styles/panel = SubResource("sb_player_card")
+
+[node name="CardBox" type="VBoxContainer" parent="TopBar/HBox/PlayerCard" unique_id=111873151]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Name" type="Label" parent="TopBar/HBox/PlayerCard/CardBox" unique_id=1631377674]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "OPERATOR"
+
+[node name="Level" type="Label" parent="TopBar/HBox/PlayerCard/CardBox" unique_id=1116166685]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 12
+text = "LEVEL 1"
+
+[node name="BigPlayButton" type="Button" parent="." unique_id=202747702]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -120.0
+offset_right = -56.0
+offset_bottom = -56.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("sb_big_play")
+theme_override_styles/pressed = SubResource("sb_big_play")
+theme_override_styles/hover = SubResource("sb_big_play")
+theme_override_styles/focus = SubResource("sb_big_play")
+text = "PLAY  ▸"
+
+[node name="DifficultyPanel" type="PanelContainer" parent="." unique_id=1599272507]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -170.0
+offset_right = 160.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="DifficultyPanel" unique_id=2122851740]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="DifficultyPanel/VBox" unique_id=633675755]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "SELECT DIFFICULTY"
+horizontal_alignment = 1
+
+[node name="EasyButton" type="Button" parent="DifficultyPanel/VBox" unique_id=1773067961]
+unique_name_in_owner = true
+layout_mode = 2
+text = "EASY"
+
+[node name="MediumButton" type="Button" parent="DifficultyPanel/VBox" unique_id=871402647]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MEDIUM"
+
+[node name="HardButton" type="Button" parent="DifficultyPanel/VBox" unique_id=1041473053]
+unique_name_in_owner = true
+layout_mode = 2
+text = "HARD"
+
+[node name="DifficultyBackButton" type="Button" parent="DifficultyPanel/VBox" unique_id=1267435487]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BACK"
+
+[node name="SettingsPanel" type="PanelContainer" parent="." unique_id=1988192113]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_settings_bg")
+
+[node name="Margin" type="MarginContainer" parent="SettingsPanel" unique_id=591798274]
+layout_mode = 2
+theme_override_constants/margin_left = 72
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 72
+theme_override_constants/margin_bottom = 48
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Margin" unique_id=510349703]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="HeaderRow" type="HBoxContainer" parent="SettingsPanel/Margin/VBox" unique_id=534022433]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Emblem" type="TextureRect" parent="SettingsPanel/Margin/VBox/HeaderRow" unique_id=1443535428]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture = ExtResource("3_emblem")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="SettingsPanel/Margin/VBox/HeaderRow" unique_id=386304934]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "SETTINGS"
+
+[node name="Sections" type="HBoxContainer" parent="SettingsPanel/Margin/VBox" unique_id=1806753025]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="ControlsSection" type="PanelContainer" parent="SettingsPanel/Margin/VBox/Sections" unique_id=632528884]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("sb_section")
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection" unique_id=593156298]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="Label" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection/VBox" unique_id=955822869]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "CONTROLS"
+
+[node name="SensLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection/VBox" unique_id=1172444503]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "MOUSE SENSITIVITY"
+
+[node name="SensitivitySlider" type="HSlider" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection/VBox" unique_id=369238190]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+min_value = 0.05
+max_value = 1.0
+step = 0.01
+value = 0.25
+
+[node name="AdsSensLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection/VBox" unique_id=1621050142]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "ADS SENSITIVITY"
+
+[node name="AdsSensSlider" type="HSlider" parent="SettingsPanel/Margin/VBox/Sections/ControlsSection/VBox" unique_id=2130547000]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+min_value = 0.2
+max_value = 1.0
+step = 0.05
+value = 0.6000000000000001
+
+[node name="AudioSection" type="PanelContainer" parent="SettingsPanel/Margin/VBox/Sections" unique_id=2131586430]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("sb_section")
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Margin/VBox/Sections/AudioSection" unique_id=1392033875]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="Label" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=1633156886]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "AUDIO"
+
+[node name="MasterLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=867210210]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "MASTER VOLUME"
+
+[node name="MasterSlider" type="HSlider" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=334238946]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="SfxLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=1218640915]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "SFX VOLUME"
+
+[node name="SfxSlider" type="HSlider" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=1193448962]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="UiLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=967004641]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "UI VOLUME"
+
+[node name="UiSlider" type="HSlider" parent="SettingsPanel/Margin/VBox/Sections/AudioSection/VBox" unique_id=406414777]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 0.7
+
+[node name="VideoSection" type="PanelContainer" parent="SettingsPanel/Margin/VBox/Sections" unique_id=1943653570]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("sb_section")
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Margin/VBox/Sections/VideoSection" unique_id=57791883]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="Label" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox" unique_id=271088632]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "VIDEO"
+
+[node name="FullscreenRow" type="HBoxContainer" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox" unique_id=1106543952]
+layout_mode = 2
+
+[node name="FullscreenLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox/FullscreenRow" unique_id=970882888]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "FULLSCREEN"
+
+[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox/FullscreenRow" unique_id=1738890562]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VsyncRow" type="HBoxContainer" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox" unique_id=1847686879]
+layout_mode = 2
+
+[node name="VsyncLabel" type="Label" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox/VsyncRow" unique_id=386577519]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "VSYNC"
+
+[node name="VsyncCheck" type="CheckButton" parent="SettingsPanel/Margin/VBox/Sections/VideoSection/VBox/VsyncRow" unique_id=1588780143]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+
+[node name="FooterRow" type="HBoxContainer" parent="SettingsPanel/Margin/VBox" unique_id=878720973]
+layout_mode = 2
+
+[node name="SettingsBackButton" type="Button" parent="SettingsPanel/Margin/VBox/FooterRow" unique_id=1644259379]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+text = "BACK"
+
+[node name="FooterLeft" type="Label" parent="." unique_id=1483187717]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -56.0
+offset_right = 460.0
+offset_bottom = -30.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.45, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 14
+text = "v0.1.0   |   AlexionStudios"

@@ -1,0 +1,151 @@
+[gd_scene format=3 uid="uid://f0game00001"]
+
+[ext_resource type="Script" path="res://Scripts/Managers/game_scene.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/Maps/warehouse.tscn" id="2_warehouse"]
+[ext_resource type="PackedScene" path="res://Scenes/Player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://Scenes/Enemies/bot.tscn" id="4_bot"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/hud.tscn" id="5_hud"]
+[ext_resource type="Theme" path="res://Assets/UI/final_zone_theme.tres" id="6_theme"]
+
+[node name="Game" type="Node3D"]
+process_mode = 3
+script = ExtResource("1_script")
+
+[node name="Warehouse" parent="." instance=ExtResource("2_warehouse")]
+process_mode = 1
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+process_mode = 1
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 12.5)
+
+[node name="Bot" parent="." instance=ExtResource("4_bot")]
+process_mode = 1
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.1, -12.5)
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
+process_mode = 1
+
+[node name="PauseLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Root" type="Control" parent="PauseLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("6_theme")
+
+[node name="Overlay" type="ColorRect" parent="PauseLayer/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.02, 0.78)
+
+[node name="Center" type="CenterContainer" parent="PauseLayer/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="PauseLayer/Root/Center"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PauseLayer/Root/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PausedLabel" type="Label" parent="PauseLayer/Root/Center/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 30
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="PauseLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RESUME"
+
+[node name="PauseMenuButton" type="Button" parent="PauseLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MAIN MENU"
+
+[node name="PauseQuitButton" type="Button" parent="PauseLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "QUIT GAME"
+
+[node name="EndLayer" type="CanvasLayer" parent="."]
+layer = 11
+
+[node name="Root" type="Control" parent="EndLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("6_theme")
+
+[node name="Overlay" type="ColorRect" parent="EndLayer/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.02, 0.85)
+
+[node name="Center" type="CenterContainer" parent="EndLayer/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="EndLayer/Root/Center"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="EndLayer/Root/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ResultLabel" type="Label" parent="EndLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.706, 0, 1)
+theme_override_font_sizes/font_size = 52
+text = "VICTORY"
+horizontal_alignment = 1
+
+[node name="FinalScoreLabel" type="Label" parent="EndLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "YOU  10  -  0  BOT"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="EndLayer/Root/Center/Panel/VBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="RematchButton" type="Button" parent="EndLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "REMATCH"
+
+[node name="EndMenuButton" type="Button" parent="EndLayer/Root/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MAIN MENU"

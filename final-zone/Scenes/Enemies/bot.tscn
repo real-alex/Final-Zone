@@ -1,0 +1,77 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Scripts/AI/bot.gd" id="1_bot"]
+[ext_resource type="Script" path="res://Scripts/Shared/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://Scripts/Shared/hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://Scripts/Shared/soldier_rig.gd" id="4_rig"]
+[ext_resource type="Script" path="res://Scripts/Weapons/viewmodel_rig.gd" id="6_gunrig"]
+[ext_resource type="PackedScene" path="res://Assets/Weapons/m4_carbine_with_attachment_set.glb" id="7_m4"]
+
+[sub_resource type="CapsuleShape3D" id="bot_capsule"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="body_hurt_capsule"]
+radius = 0.34
+height = 1.35
+
+[sub_resource type="SphereShape3D" id="head_sphere"]
+radius = 0.2
+
+[node name="Bot" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_bot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("bot_capsule")
+
+[node name="CharacterModel" type="Node3D" parent="."]
+script = ExtResource("4_rig")
+
+[node name="HeldGun" type="Node3D" parent="CharacterModel"]
+script = ExtResource("6_gunrig")
+target_length = 0.78
+
+[node name="M4" parent="CharacterModel/HeldGun" instance=ExtResource("7_m4")]
+
+[node name="BodyHurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
+shape = SubResource("body_hurt_capsule")
+
+[node name="HeadHurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_hurtbox")
+is_head = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HeadHurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+shape = SubResource("head_sphere")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="Eye" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="MuzzleLight" type="OmniLight3D" parent="Eye"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -0.6)
+light_color = Color(1, 0.75, 0.35, 1)
+light_energy = 0.0
+omni_range = 4.0
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.6
+target_desired_distance = 1.2
+path_height_offset = 0.0
+radius = 0.4
+height = 1.8
