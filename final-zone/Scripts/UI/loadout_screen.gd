@@ -366,18 +366,14 @@ func _update_preview(weapon: WeaponData, fitted := PackedStringArray()) -> void:
 		previous_yaw = _preview_rig.rotation.y
 		_preview_rig.queue_free()
 	_preview_rig = ViewmodelRig.new()
-	_preview_rig.body_part = weapon.body_part
-	_preview_rig.keep_parts = weapon.keep_parts
-	_preview_rig.scope_part = weapon.scope_part
+	_preview_rig.category = weapon.category
 	_preview_rig.build_optic = weapon.build_optic
 	_preview_rig.optic_type = LoadoutManager.get_optic(weapon.resource_path)
 	_preview_rig.optic_offset = LoadoutManager.get_optic_offset(weapon.resource_path)
 	_preview_rig.aim_trim_deg = LoadoutManager.get_aim_trim(weapon.resource_path)
 	_preview_rig.attachments = fitted
-	_preview_rig.target_length = 0.8
-	_preview_rig.flip_forward = weapon.flip_forward
+	_preview_rig.target_length = weapon.view_length
 	_preview_rig.rotation.y = previous_yaw
-	_preview_rig.add_child(load(weapon.model_path).instantiate())
 	_preview_holder.add_child(_preview_rig)
 	# The rig animates itself for first-person; the preview only rotates.
 	_preview_rig.set_process(false)

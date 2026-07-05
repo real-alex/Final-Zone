@@ -42,6 +42,7 @@ var is_reloading := false
 var _slot_index := 0
 var _slot_ammo: Dictionary = {}
 var _switching := false
+var _ads_toggled := false
 var _hip_position := Vector3.ZERO
 var _ads_position := Vector3.ZERO
 var _fire_cooldown := 0.0
@@ -99,19 +100,15 @@ func _equip_slot(index: int, instant := false) -> void:
 		_viewmodel.queue_free()
 	var weapon_path := _slot_paths[index]
 	_optic_type = LoadoutManager.get_optic(weapon_path) if weapon_path != "" else "red_dot"
+	# Procedural gun — built from primitives, no model to load.
 	_viewmodel = ViewmodelRig.new()
-	_viewmodel.body_part = data.body_part
-	_viewmodel.keep_parts = data.keep_parts
-	_viewmodel.scope_part = data.scope_part
+	_viewmodel.category = data.category
 	_viewmodel.build_optic = data.build_optic
 	_viewmodel.optic_type = _optic_type
 	_viewmodel.optic_offset = LoadoutManager.get_optic_offset(weapon_path)
 	_viewmodel.aim_trim_deg = LoadoutManager.get_aim_trim(weapon_path)
 	_viewmodel.attachments = fitted
 	_viewmodel.target_length = data.view_length
-	_viewmodel.flip_forward = data.flip_forward
-	var model: Node3D = load(data.model_path).instantiate()
-	_viewmodel.add_child(model)
 	add_child(_viewmodel)
 
 	_flash_light = OmniLight3D.new()
@@ -167,6 +164,12 @@ func _process(delta: float) -> void:
 	if _flash_light != null:
 		_flash_light.light_energy = maxf(_flash_light.light_energy - 30.0 * delta, 0.0)
 
+	# Sniper: hide the whole gun the instant scoping begins so its opaque
+	# 3D scope tube never blocks the view — the see-through screen overlay
+	# becomes the sight picture instead.
+	if _viewmodel != null:
+		_viewmodel.visible = get_scope_view_fraction() < 0.2
+
 	if not can_control:
 		return
 	_handle_switch_input()
@@ -202,10 +205,14 @@ func _can_control() -> bool:
 
 
 func _update_aim(delta: float, can_control: bool) -> void:
-	var wants_aim := (
-		can_control and not _switching
-		and Input.is_action_pressed("ads") and not _player.is_sprinting
-	)
+	var blocked := not can_control or _switching or _player.is_sprinting
+	if SettingsManager.get_value("controls", "ads_toggle"):
+		if can_control and not _switching and Input.is_action_just_pressed("ads"):
+			_ads_toggled = not _ads_toggled
+		if blocked:
+			_ads_toggled = false
+	var wants_aim := _ads_toggled if SettingsManager.get_value("controls", "ads_toggle") \
+		else (not blocked and Input.is_action_pressed("ads"))
 	var step := delta / maxf(data.ads_time, 0.05)
 	aim_fraction = clampf(aim_fraction + (step if wants_aim else -step), 0.0, 1.0)
 
@@ -260,7 +267,9 @@ func get_optic_type() -> String:
 func get_scope_view_fraction() -> float:
 	if _optic_type != "sniper":
 		return 0.0
-	return clampf((aim_fraction - 0.72) / 0.28, 0.0, 1.0)
+	# Engages early (from 40% aim) so the scope picture fades in as the gun
+	# hides, with no black-tube moment in between.
+	return clampf((aim_fraction - 0.40) / 0.35, 0.0, 1.0)
 
 
 func get_current_spread_deg() -> float:
@@ -290,7 +299,7 @@ func _try_fire() -> void:
 	ammo_changed.emit(magazine, reserve)
 	fired.emit()
 
-	AudioManager.play_sfx(data.fire_sound, -9.0 if data.suppressed else 0.0, 0.08)
+	AudioManager.play_sfx("silenced" if data.suppressed else "gunshot", -2.0 if data.suppressed else 0.0, 0.06)
 	_flash_light.light_energy = 0.9 if data.suppressed else 2.5
 	_viewmodel.add_fire_kick()
 
@@ -318,6 +327,10 @@ func _fire_ray() -> void:
 	query.collide_with_areas = true
 	query.exclude = [_player.get_rid()]
 	var hit: Dictionary = _camera.get_world_3d().direct_space_state.intersect_ray(query)
+	# Bullet tracer from the muzzle to the hit point (or max range).
+	var muzzle := _viewmodel.global_position + (-_viewmodel.global_transform.basis.z * 0.4)
+	var end_point: Vector3 = hit.get("position", to)
+	_spawn_tracer(muzzle, end_point)
 	if hit.is_empty():
 		return
 
@@ -326,6 +339,31 @@ func _fire_ray() -> void:
 	if collider != null and collider.has_method("take_hit"):
 		var result: Dictionary = collider.take_hit(data.damage, _player, data.headshot_multiplier)
 		hit_confirmed.emit(result.get("headshot", false), result.get("killed", false))
+
+
+## Bright fading tracer streak from muzzle to impact.
+func _spawn_tracer(from: Vector3, to: Vector3) -> void:
+	var length := from.distance_to(to)
+	if length < 0.2:
+		return
+	var tracer := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.02, 0.02, length)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = data.tracer_color
+	mat.emission_enabled = true
+	mat.emission = data.tracer_color
+	mat.emission_energy_multiplier = 4.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	box.material = mat
+	tracer.mesh = box
+	get_tree().current_scene.add_child(tracer)
+	tracer.global_position = (from + to) * 0.5
+	tracer.look_at(to, Vector3.UP)
+	var tween := tracer.create_tween()
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.12)
+	tween.tween_callback(tracer.queue_free)
 
 
 func _spawn_impact(hit_position: Vector3, hit_normal: Vector3) -> void:

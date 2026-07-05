@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://f0boot00001"]
+[gd_scene load_steps=3 format=3 uid="uid://f0boot00001"]
 
-[ext_resource type="Theme" path="res://Assets/UI/final_zone_theme.tres" id="1_theme"]
+[ext_resource type="Theme" uid="uid://wp3brxtyt0l1" path="res://Assets/UI/final_zone_theme.tres" id="1_theme"]
 [ext_resource type="Script" path="res://Scripts/UI/boot_splash.gd" id="2_script"]
 
 [node name="Boot" type="Control"]

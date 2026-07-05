@@ -108,6 +108,9 @@ func _add_box(size: Vector3, center: Vector3, material_key: String, rotation_deg
 	body.collision_layer = 1
 	body.position = center
 	body.rotation_degrees = rotation_deg
+	# Crates are breakable cover — grenades blow them apart.
+	if material_key == "crate" or material_key == "crate_dark":
+		body.add_to_group("destructible")
 
 	var mesh_instance := MeshInstance3D.new()
 	var box_mesh := BoxMesh.new()
@@ -129,6 +132,9 @@ func _add_cylinder(radius: float, height: float, center: Vector3, material_key: 
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.position = center
+	# Barrels are destructible — grenades can blow them up.
+	if material_key == "barrel":
+		body.add_to_group("destructible")
 
 	var mesh_instance := MeshInstance3D.new()
 	var cylinder_mesh := CylinderMesh.new()

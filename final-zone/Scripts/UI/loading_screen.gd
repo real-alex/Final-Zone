@@ -27,9 +27,9 @@ const TIPS := [
 
 ## Rendered once off-screen while loading so their shaders compile before
 ## gameplay — first-draw compilation is the main mid-game hitch on ANGLE.
+## Models are procedural now (no imported assets), so only the particle
+## effect needs a shader warm-up.
 const WARMUP_SCENES := [
-	"res://Assets/Characters/newcharater/Characterpack/black-squad-soldier-character.fbx",
-	"res://Assets/Weapons/m4_carbine_with_attachment_set.glb",
 	"res://Scenes/Weapons/impact_effect.tscn",
 ]
 

@@ -7,6 +7,26 @@ signal died(attacker: Node)
 signal damaged(amount: float, attacker: Node)
 signal health_changed(current: float, maximum: float)
 signal stamina_changed(current: float, maximum: float)
+signal flashed(duration: float)
+
+const GRENADE_SCENE: PackedScene = preload("res://Scenes/Weapons/grenade.tscn")
+const THROW_COOLDOWN := 0.8
+const MEDKIT_CHARGES := 2
+const MEDKIT_HEAL_RATE := 55.0   ## HP per second while healing
+
+var _throw_cooldown := 0.0
+var _medkits := MEDKIT_CHARGES
+var _healing := false
+var _time_since_hit := 99.0
+var _shake_trauma := 0.0
+
+
+## Adds camera shake trauma (0..1); explosions call this.
+func add_shake(amount: float) -> void:
+	_shake_trauma = minf(_shake_trauma + amount, 1.0)
+
+const REGEN_DELAY := 4.5      ## seconds out of combat before regen starts
+const REGEN_RATE := 18.0      ## HP per second regenerated
 
 const WALK_SPEED := 5.0
 const SPRINT_SPEED := 8.0
@@ -42,6 +62,7 @@ var stamina := MAX_STAMINA
 var is_crouching := false
 var is_sprinting := false
 var input_enabled := true
+var _crouch_toggled := false
 
 var _pitch := 0.0
 var _bob_time := 0.0
@@ -81,10 +102,26 @@ func _physics_process(delta: float) -> void:
 	if input_enabled:
 		input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		wants_sprint = Input.is_action_pressed("sprint")
-		wants_crouch = Input.is_action_pressed("crouch")
+		if SettingsManager.get_value("controls", "crouch_toggle"):
+			if Input.is_action_just_pressed("crouch"):
+				_crouch_toggled = not _crouch_toggled
+			wants_crouch = _crouch_toggled
+		else:
+			wants_crouch = Input.is_action_pressed("crouch")
 		if Input.is_action_just_pressed("jump") and is_on_floor() and not is_crouching:
 			velocity.y = JUMP_VELOCITY
+		if Input.is_action_just_pressed("grenade"):
+			_throw_grenade(false)
+		elif Input.is_action_just_pressed("flashbang"):
+			_throw_grenade(true)
+		if Input.is_action_just_pressed("medkit"):
+			_use_medkit()
 
+	_update_medkit(delta)
+
+	_throw_cooldown = maxf(_throw_cooldown - delta, 0.0)
+	_update_regen(delta)
+	_update_shake(delta)
 	_update_crouch(wants_crouch, delta)
 	_update_sprint(wants_sprint, input_dir, delta)
 
@@ -177,6 +214,44 @@ func _is_aiming() -> bool:
 	return _weapon != null and _weapon.has_method("get_ads_fov") and _weapon.get("is_aiming")
 
 
+## Medkit: heal to full over a couple of seconds, limited charges per life.
+func _use_medkit() -> void:
+	if _healing or _medkits <= 0 or not health.alive or health.current_health >= health.max_health:
+		return
+	_medkits -= 1
+	_healing = true
+	AudioManager.play_sfx("reload", -3.0)
+
+
+func _update_medkit(delta: float) -> void:
+	if not _healing:
+		return
+	health.heal(MEDKIT_HEAL_RATE * delta)
+	if health.current_health >= health.max_health or not health.alive:
+		_healing = false
+
+
+## Lobs a grenade (frag) or flashbang from the camera along the aim line.
+func _throw_grenade(is_flash: bool) -> void:
+	if _throw_cooldown > 0.0:
+		return
+	_throw_cooldown = THROW_COOLDOWN
+	var grenade := GRENADE_SCENE.instantiate()
+	grenade.is_flash = is_flash
+	grenade.thrower = self
+	get_tree().current_scene.add_child(grenade)
+	var forward := -camera.global_transform.basis.z
+	grenade.global_position = camera.global_position + forward * 0.5
+	grenade.linear_velocity = forward * 12.0 + Vector3.UP * 3.0 + velocity
+	grenade.angular_velocity = Vector3(6, 2, 0)
+	AudioManager.play_sfx("dry_fire", -4.0)
+
+
+## Blinds the player: white flash that fades over `duration`.
+func apply_flash(duration: float) -> void:
+	flashed.emit(duration)
+
+
 ## Called by bot hitscan. Returns kill info like the bot's take_hit does.
 func take_hit(damage: float, attacker: Node, _headshot_multiplier: float = 1.0) -> Dictionary:
 	var was_alive := health.alive
@@ -184,7 +259,30 @@ func take_hit(damage: float, attacker: Node, _headshot_multiplier: float = 1.0) 
 	return {"killed": was_alive and not health.alive, "headshot": false, "damage": damage}
 
 
+## Decaying camera shake — random small rotation scaled by trauma².
+func _update_shake(delta: float) -> void:
+	_shake_trauma = maxf(_shake_trauma - delta * 1.4, 0.0)
+	if _shake_trauma <= 0.0:
+		camera.rotation = Vector3.ZERO
+		return
+	var amount := _shake_trauma * _shake_trauma * 0.09
+	camera.rotation = Vector3(
+		randf_range(-amount, amount),
+		randf_range(-amount, amount),
+		randf_range(-amount, amount))
+
+
+## Out-of-combat health regeneration (call each physics frame).
+func _update_regen(delta: float) -> void:
+	_time_since_hit += delta
+	if _healing or not health.alive:
+		return
+	if _time_since_hit >= REGEN_DELAY and health.current_health < health.max_health:
+		health.heal(REGEN_RATE * delta)
+
+
 func _on_damaged(amount: float, attacker: Node, _headshot: bool) -> void:
+	_time_since_hit = 0.0
 	damaged.emit(amount, attacker)
 
 
@@ -207,6 +305,8 @@ func respawn_at(spawn_transform: Transform3D) -> void:
 	_pitch = 0.0
 	head.rotation.x = 0.0
 	stamina = MAX_STAMINA
+	_medkits = MEDKIT_CHARGES
+	_healing = false
 	health.reset()
 	set_active(true)
 	if _weapon != null and _weapon.has_method("refill"):

@@ -18,6 +18,10 @@ const GAME_SCENE := "res://Scenes/Main/game.tscn"
 @onready var final_score_label: Label = %FinalScoreLabel
 
 var _paused := false
+var _death_layer: CanvasLayer
+var _death_count: Label
+var _respawn_button: Button
+var _death_loadout: Control
 
 
 func _ready() -> void:
@@ -31,6 +35,7 @@ func _ready() -> void:
 	player.stamina_changed.connect(hud.set_stamina)
 	player.damaged.connect(_on_player_damaged)
 	player.died.connect(_on_player_died)
+	player.flashed.connect(hud.flash_blind)
 
 	# Weapon -> HUD / score.
 	weapon.ammo_changed.connect(hud.set_ammo)
@@ -70,11 +75,11 @@ func _connect_menu_buttons() -> void:
 func _process(_delta: float) -> void:
 	if GameManager.is_gameplay_active():
 		hud.set_crosshair_spread(8.0 + weapon.get_current_spread_deg() * 6.0)
-		hud.set_crosshair_visible(weapon.get_aim_fraction() < 0.35 and player.health.alive)
-		var scope_fraction := weapon.get_scope_view_fraction() if player.health.alive else 0.0
+		var scope_fraction := weapon.get_scope_view_fraction()
 		hud.set_scope_view(scope_fraction, weapon.get_optic_type())
-	else:
-		hud.set_scope_view(0.0, "")
+		# Hide the crosshair when aiming or fully inside the sniper scope.
+		hud.set_crosshair_visible(
+			weapon.get_aim_fraction() < 0.35 and scope_fraction < 0.2 and player.health.alive)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -102,8 +107,37 @@ func _on_hit_confirmed(headshot: bool, killed: bool) -> void:
 	hud.show_hit_marker(headshot)
 	if killed:
 		AudioManager.play_sfx_3d("death", bot.global_position, -2.0)
+		if weapon.data.is_blueprint:
+			_blueprint_kill_effect(bot.global_position + Vector3(0, 1.0, 0), weapon.data.tracer_color)
 		MatchManager.register_kill("YOU", "BOT", true, headshot)
 		_handle_bot_death()
+
+
+## Colored spark burst on an epic-blueprint kill.
+func _blueprint_kill_effect(at: Vector3, color: Color) -> void:
+	var p := CPUParticles3D.new()
+	p.emitting = true
+	p.one_shot = true
+	p.amount = 30
+	p.lifetime = 0.6
+	p.explosiveness = 1.0
+	p.spread = 180.0
+	p.initial_velocity_min = 2.0
+	p.initial_velocity_max = 6.0
+	p.gravity = Vector3(0, -4, 0)
+	p.scale_amount_min = 0.05
+	p.scale_amount_max = 0.12
+	p.color = color
+	add_child(p)
+	p.global_position = at
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = 5.0
+	light.omni_range = 5.0
+	add_child(light)
+	light.global_position = at
+	light.create_tween().tween_property(light, "light_energy", 0.0, 0.4).finished.connect(light.queue_free)
+	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
 
 
 func _on_player_died(_attacker: Node) -> void:
@@ -111,7 +145,111 @@ func _on_player_died(_attacker: Node) -> void:
 	AudioManager.play_sfx("death", -4.0)
 	player.set_active(false)
 	if MatchManager.match_active:
-		_respawn_player()
+		await _play_kill_cam()
+		if MatchManager.match_active and is_inside_tree():
+			_show_death_screen()
+
+
+## Brief cinematic showing the killer before the respawn screen.
+func _play_kill_cam() -> void:
+	var cam := Camera3D.new()
+	add_child(cam)
+	var focus := bot.global_position + Vector3(0, 1.2, 0)
+	cam.global_position = focus + Vector3(1.6, 1.0, 1.6)
+	cam.look_at(focus, Vector3.UP)
+	cam.current = true
+	hud.show_killcam_banner("KILLED BY %s" % bot.display_name)
+	var elapsed := 0.0
+	while elapsed < 2.2 and MatchManager.match_active and is_inside_tree():
+		# Slow orbit around the killer.
+		var t := elapsed
+		cam.global_position = focus + Vector3(cos(t) * 2.2, 1.0, sin(t) * 2.2)
+		cam.look_at(focus, Vector3.UP)
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+	hud.hide_killcam_banner()
+	cam.queue_free()
+	if player.camera != null:
+		player.camera.current = true
+
+
+## CoD-style respawn screen: eliminated banner, countdown, then a RESPAWN
+## button and an EDIT LOADOUT button (so you can switch kit before respawn).
+func _show_death_screen() -> void:
+	if _death_layer == null:
+		_build_death_screen()
+	GameManager.release_mouse()
+	_death_layer.show()
+	_respawn_button.disabled = true
+	for seconds_left in [5, 4, 3, 2, 1]:
+		_death_count.text = "RESPAWN IN %d" % seconds_left
+		await get_tree().create_timer(1.0, false).timeout
+		if not MatchManager.match_active or not is_inside_tree():
+			_death_layer.hide()
+			return
+	_death_count.text = "READY"
+	_respawn_button.disabled = false
+
+
+func _do_respawn() -> void:
+	_death_layer.hide()
+	GameManager.capture_mouse()
+	AudioManager.play_ui("respawn", -6.0)
+	player.respawn_at(_farthest_spawn(warehouse.get_player_spawns(), bot.global_position))
+
+
+func _open_loadout_from_death() -> void:
+	if _death_loadout == null:
+		_death_loadout = load("res://Scenes/Menus/loadout_screen.tscn").instantiate()
+		_death_layer.add_child(_death_loadout)
+		_death_loadout.closed.connect(func() -> void: _death_loadout.hide())
+	_death_loadout.show()
+
+
+func _build_death_screen() -> void:
+	_death_layer = CanvasLayer.new()
+	_death_layer.layer = 12
+	add_child(_death_layer)
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.theme = load("res://Assets/UI/final_zone_theme.tres")
+	_death_layer.add_child(root)
+	var overlay := ColorRect.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.05, 0.02, 0.02, 0.72)
+	root.add_child(overlay)
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_CENTER)
+	vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	vbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+	vbox.add_theme_constant_override("separation", 16)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	root.add_child(vbox)
+	var title := Label.new()
+	title.text = "YOU WERE ELIMINATED"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_color_override("font_color", Color(0.9, 0.22, 0.18))
+	vbox.add_child(title)
+	_death_count = Label.new()
+	_death_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_death_count.add_theme_font_size_override("font_size", 24)
+	_death_count.add_theme_color_override("font_color", Color(1, 0.706, 0))
+	vbox.add_child(_death_count)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(row)
+	_respawn_button = Button.new()
+	_respawn_button.text = "RESPAWN"
+	_respawn_button.custom_minimum_size = Vector2(200, 50)
+	_respawn_button.pressed.connect(_do_respawn)
+	row.add_child(_respawn_button)
+	var loadout_btn := Button.new()
+	loadout_btn.text = "EDIT LOADOUT"
+	loadout_btn.custom_minimum_size = Vector2(200, 50)
+	loadout_btn.pressed.connect(_open_loadout_from_death)
+	row.add_child(loadout_btn)
 
 
 func _handle_bot_death() -> void:

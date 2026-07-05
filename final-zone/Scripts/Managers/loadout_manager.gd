@@ -15,6 +15,11 @@ const WEAPON_PATHS := [
 	"res://Resources/Weapons/cz_scorpion.tres",
 	"res://Resources/Weapons/sr25.tres",
 	"res://Resources/Weapons/m24.tres",
+	"res://Resources/Weapons/reaper.tres",   # epic blueprint (green tracers)
+	"res://Resources/Weapons/blaze.tres",    # epic blueprint (blue tracers)
+	# pistol.tres is out until a working pistol model exists — the
+	# uploaded pistolgun.glb (32 MB) is corrupt and won't import, and the
+	# weapon pack has no pistol branch. Re-add this line once fixed.
 ]
 
 const DEFAULT_PRIMARY := "res://Resources/Weapons/m4a1.tres"

@@ -38,6 +38,14 @@ var _patrol_target := Vector3.ZERO
 var _last_hit_direction := Vector3.ZERO
 var _last_hit_headshot := false
 
+const MAG_SIZE := 20
+var _mag := MAG_SIZE
+var _reloading := false
+
+const GRENADE_SCENE: PackedScene = preload("res://Scenes/Weapons/grenade.tscn")
+const GRENADE_COOLDOWN := 11.0
+var _grenade_cooldown := 6.0
+
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 @onready var health: HealthComponent = $HealthComponent
 @onready var eye: Node3D = $Eye
@@ -69,6 +77,7 @@ func _physics_process(delta: float) -> void:
 
 	muzzle_light.light_energy = maxf(muzzle_light.light_energy - 25.0 * delta, 0.0)
 	_fire_cooldown = maxf(_fire_cooldown - delta, 0.0)
+	_grenade_cooldown = maxf(_grenade_cooldown - delta, 0.0)
 
 	if not enabled or not health.alive:
 		velocity.x = 0.0
@@ -118,6 +127,13 @@ func _update_perception(delta: float) -> void:
 			nav_agent.target_position = _last_known
 
 
+## Aim point on the player's chest, dropping when they crouch so the bot
+## still sees and hits a crouched target instead of shooting over their head.
+func _player_aim_point() -> Vector3:
+	var chest := 0.75 if (_player != null and _player.is_crouching) else 1.35
+	return _player.global_position + Vector3(0, chest, 0)
+
+
 func _check_line_of_sight() -> bool:
 	if _player == null or not _player.input_enabled:
 		return false
@@ -133,7 +149,7 @@ func _check_line_of_sight() -> bool:
 			return false
 
 	var from := eye.global_position
-	var to := _player.global_position + Vector3(0, 1.4, 0)
+	var to := _player_aim_point()
 	var query := PhysicsRayQueryParameters3D.create(from, to, 0b11)
 	query.exclude = [get_rid()]
 	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
@@ -165,6 +181,11 @@ func _process_attack(delta: float) -> void:
 
 	_face_position(_player.global_position, delta)
 
+	# Occasionally lob a grenade at the player's feet to flush them out.
+	var range_to_player := global_position.distance_to(_player.global_position)
+	if _grenade_cooldown <= 0.0 and _can_see_player and range_to_player > 7.0 and range_to_player < 26.0:
+		_throw_grenade_at_player()
+
 	# Strafe while fighting; push closer when far, back off when close.
 	_strafe_timer -= delta
 	if _strafe_timer <= 0.0:
@@ -186,6 +207,19 @@ func _process_attack(delta: float) -> void:
 
 	if _can_see_player and _fire_cooldown <= 0.0 and _is_facing(_player.global_position):
 		_fire_at_player()
+
+
+## Lobs a frag grenade on a lead arc toward the player.
+func _throw_grenade_at_player() -> void:
+	_grenade_cooldown = GRENADE_COOLDOWN
+	var grenade := GRENADE_SCENE.instantiate()
+	grenade.thrower = self
+	get_tree().current_scene.add_child(grenade)
+	grenade.global_position = eye.global_position
+	var to_player := (_player.global_position + Vector3(0, 0.5, 0)) - eye.global_position
+	var flat := Vector3(to_player.x, 0, to_player.z)
+	grenade.linear_velocity = flat.normalized() * clampf(flat.length() * 1.1, 6.0, 16.0) + Vector3.UP * 4.0
+	grenade.angular_velocity = Vector3(5, 1, 0)
 
 
 func _move_along_path(speed: float) -> void:
@@ -216,12 +250,25 @@ func _is_facing(target: Vector3) -> bool:
 
 
 func _fire_at_player() -> void:
+	# Out of ammo → pause to reload (makes the bot read as smart / gives
+	# the player a window), then refill the magazine.
+	if _reloading:
+		return
+	if _mag <= 0:
+		_reloading = true
+		AudioManager.play_sfx_3d("reload", eye.global_position, -6.0)
+		get_tree().create_timer(2.0).timeout.connect(func() -> void:
+			_mag = MAG_SIZE
+			_reloading = false)
+		return
+
+	_mag -= 1
 	_fire_cooldown = fire_interval
 	muzzle_light.light_energy = 2.0
 	AudioManager.play_sfx_3d("gunshot", eye.global_position, -4.0, 0.1)
 
 	var from := eye.global_position
-	var target := _player.global_position + Vector3(0, 1.3, 0)
+	var target := _player_aim_point()
 	var direction := (target - from).normalized()
 	# Aim error cone scaled by difficulty.
 	var spread := deg_to_rad(aim_spread_deg)
@@ -269,13 +316,21 @@ func set_active(active: bool) -> void:
 		velocity = Vector3.ZERO
 
 
-## Death: stays visible and falls over; collisions turn off immediately.
+## Death: spawn a physics ragdoll corpse, hide the animated body.
 func play_death() -> void:
 	enabled = false
 	collision_shape.set_deferred("disabled", true)
 	for hurtbox: Hurtbox in [$BodyHurtbox, $HeadHurtbox]:
 		hurtbox.get_node("CollisionShape3D").set_deferred("disabled", true)
-	character_rig.play_death(_last_hit_direction, _last_hit_headshot)
+	_spawn_ragdoll()
+	visible = false
+
+
+func _spawn_ragdoll() -> void:
+	var corpse := RagdollCorpse.new()
+	get_tree().current_scene.add_child(corpse)
+	var dir := _last_hit_direction if _last_hit_direction != Vector3.ZERO else -global_transform.basis.z
+	corpse.setup(global_transform, dir, Color(0.34, 0.20, 0.16))
 
 
 func respawn_at(spawn_transform: Transform3D) -> void:
@@ -285,5 +340,7 @@ func respawn_at(spawn_transform: Transform3D) -> void:
 	_patrol_target = Vector3.ZERO
 	_can_see_player = false
 	_reaction_left = reaction_time
+	_mag = MAG_SIZE
+	_reloading = false
 	character_rig.reset_pose()
 	set_active(true)

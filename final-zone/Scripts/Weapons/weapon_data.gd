@@ -51,6 +51,11 @@ extends Resource
 @export var fire_sound := "gunshot"
 @export var reload_sound := "reload"
 
+@export_group("Blueprint")
+## Epic-blueprint flair: tracer color + a colored kill burst.
+@export var tracer_color := Color(1.0, 0.85, 0.4)
+@export var is_blueprint := false
+
 
 ## Set by with_attachments when a suppressor is fitted (quieter shots).
 var suppressed := false
