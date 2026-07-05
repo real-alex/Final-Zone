@@ -38,6 +38,7 @@ func _draw() -> void:
 	# glass is SEE-THROUGH; the FOV zoom does the magnifying.
 	var radius := minf(view_size.x, view_size.y) * lerpf(0.34, 0.46, alpha)
 	var black := Color(0.0, 0.0, 0.0, alpha)
+	var line := Color(0.02, 0.02, 0.02, 0.96 * alpha)
 	var reticle := Color(0.04, 0.05, 0.06, 0.95 * alpha)
 
 	# Black eyepiece surround OUTSIDE the ocular only (four rects). Inside
@@ -51,7 +52,7 @@ func _draw() -> void:
 	draw_arc(center, radius * 0.5, 0.0, TAU, 96, Color(0.55, 0.7, 1.0, 0.04 * alpha), radius * 0.6, true)
 	draw_arc(center, radius * 0.955, 0.0, TAU, 128, Color(0, 0, 0, 0.4 * alpha), radius * 0.07, true)
 	# Scope tube rim + inner highlight.
-	draw_arc(center, radius, 0.0, TAU, 128, Color(0.02, 0.02, 0.02, alpha), 6.0, true)
+	draw_arc(center, radius, 0.0, TAU, 128, line, 6.0, true)
 	draw_arc(center, radius - 5.0, 0.0, TAU, 128, Color(0.6, 0.65, 0.7, 0.18 * alpha), 1.5, true)
 
 	# Fine mil-dot crosshair (thin so it doesn't block the target).

@@ -107,6 +107,7 @@ func _equip_slot(index: int, instant := false) -> void:
 	_viewmodel.optic_type = _optic_type
 	_viewmodel.optic_offset = LoadoutManager.get_optic_offset(weapon_path)
 	_viewmodel.aim_trim_deg = LoadoutManager.get_aim_trim(weapon_path)
+	_viewmodel.mount_offsets = LoadoutManager.get_mount_offsets(weapon_path)
 	_viewmodel.attachments = fitted
 	_viewmodel.target_length = data.view_length
 	add_child(_viewmodel)
@@ -164,9 +165,8 @@ func _process(delta: float) -> void:
 	if _flash_light != null:
 		_flash_light.light_energy = maxf(_flash_light.light_energy - 30.0 * delta, 0.0)
 
-	# Sniper: hide the whole gun the instant scoping begins so its opaque
-	# 3D scope tube never blocks the view — the see-through screen overlay
-	# becomes the sight picture instead.
+	# Sniper: hide the whole gun once the scope overlay is taking over so its
+	# opaque 3D scope tube never blocks the view.
 	if _viewmodel != null:
 		_viewmodel.visible = get_scope_view_fraction() < 0.2
 

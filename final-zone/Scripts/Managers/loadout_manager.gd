@@ -135,6 +135,39 @@ func toggle_attachment(weapon_path: String, attachment: String) -> void:
 	loadout_changed.emit()
 
 
+## Per-weapon, per-mount position corrections ("path::mount" -> Vector3)
+## for muzzle / laser / grip / mag. The optic keeps its own storage.
+var _mount_offsets: Dictionary = {}
+
+
+func get_mount_offset(weapon_path: String, mount: String) -> Vector3:
+	if mount == "optic":
+		return get_optic_offset(weapon_path)
+	return _mount_offsets.get("%s::%s" % [weapon_path, mount], Vector3.ZERO)
+
+
+func set_mount_offset(weapon_path: String, mount: String, offset: Vector3) -> void:
+	if mount == "optic":
+		set_optic_offset(weapon_path, offset)
+		return
+	var key := "%s::%s" % [weapon_path, mount]
+	if offset == Vector3.ZERO:
+		_mount_offsets.erase(key)
+	else:
+		_mount_offsets[key] = offset
+	_save()
+
+
+## All mount offsets for one weapon, in the shape ViewmodelRig expects.
+func get_mount_offsets(weapon_path: String) -> Dictionary:
+	var offsets: Dictionary = {}
+	for mount in ["muzzle", "laser", "grip", "mag"]:
+		var offset := get_mount_offset(weapon_path, mount)
+		if offset != Vector3.ZERO:
+			offsets[mount] = offset
+	return offsets
+
+
 func get_optic_offset(weapon_path: String) -> Vector3:
 	return _optic_offsets.get(weapon_path, Vector3.ZERO)
 
@@ -169,6 +202,9 @@ func _load() -> void:
 	if config.has_section("optics"):
 		for key in config.get_section_keys("optics"):
 			_optics[key] = config.get_value("optics", key)
+	if config.has_section("mount_offsets"):
+		for key in config.get_section_keys("mount_offsets"):
+			_mount_offsets[key] = config.get_value("mount_offsets", key)
 
 
 func _save() -> void:
@@ -183,4 +219,6 @@ func _save() -> void:
 		config.set_value("aim_trims", key, _aim_trims[key])
 	for key in _optics:
 		config.set_value("optics", key, _optics[key])
+	for key in _mount_offsets:
+		config.set_value("mount_offsets", key, _mount_offsets[key])
 	config.save(SAVE_PATH)

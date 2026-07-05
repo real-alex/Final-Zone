@@ -95,6 +95,18 @@ func _refresh() -> void:
 		var optic_selected := optic_type == optic_name
 		optic_button.set_pressed_no_signal(optic_selected)
 		_style_toggle_button(optic_button, optic_selected)
+	# Mount buttons: SIGHT always available; others need their attachment.
+	for mount: String in _mount_buttons:
+		var mount_button: Button = _mount_buttons[mount]
+		var available: bool = mount == "optic" or fitted.has(MOUNT_REQUIRES[mount])
+		mount_button.disabled = not available
+		if not available and _active_mount == mount:
+			_active_mount = "optic"
+	for mount: String in _mount_buttons:
+		var mount_button: Button = _mount_buttons[mount]
+		mount_button.set_pressed_no_signal(_active_mount == mount)
+		_style_toggle_button(mount_button, _active_mount == mount)
+
 	_update_stat_bars(shown.with_attachments(fitted))
 	_update_preview(shown, fitted)
 	_update_card_highlights()
@@ -239,34 +251,81 @@ const ALIGN_STEP := 0.004
 const TRIM_STEP := 0.5
 
 
+const MOUNT_LABELS := {
+	"optic": "SIGHT",
+	"muzzle": "MUZZLE",
+	"laser": "LASER",
+	"grip": "GRIP",
+	"mag": "MAG",
+}
+## Which attachment must be fitted for a mount to be editable.
+const MOUNT_REQUIRES := {
+	"muzzle": "suppressor",
+	"laser": "laser",
+	"grip": "foregrip",
+	"mag": "extended_mag",
+}
+
+var _active_mount := "optic"
+var _mount_buttons: Dictionary = {}
+
+
 func _build_align_controls() -> void:
 	var container := stats_box.get_parent()
 
 	var header := Label.new()
-	header.text = "EDIT GUN - ALIGN"
+	header.text = "EDIT GUN"
 	header.add_theme_color_override("font_color", ACCENT)
 	header.add_theme_font_size_override("font_size", 18)
 	container.add_child(header)
 
 	var hint := Label.new()
-	hint.text = "Nudge the optic or barrel\nuntil ADS sits on center."
+	hint.text = "Tap a part, then nudge it\nuntil it sits right on the gun."
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	hint.add_theme_font_size_override("font_size", 13)
 	container.add_child(hint)
 
-	container.add_child(_align_row("SIGHT X", Vector3(-ALIGN_STEP, 0, 0), Vector3(ALIGN_STEP, 0, 0)))
-	container.add_child(_align_row("SIGHT Y", Vector3(0, -ALIGN_STEP, 0), Vector3(0, ALIGN_STEP, 0)))
-	container.add_child(_align_row("SIGHT Z", Vector3(0, 0, ALIGN_STEP), Vector3(0, 0, -ALIGN_STEP)))
+	# Mount selector: tap the part you want to move; it glows gold on
+	# the 3D preview.
+	var mount_row := HBoxContainer.new()
+	mount_row.add_theme_constant_override("separation", 6)
+	container.add_child(mount_row)
+	for mount: String in MOUNT_LABELS:
+		var button := Button.new()
+		button.toggle_mode = true
+		button.text = MOUNT_LABELS[mount]
+		button.custom_minimum_size = Vector2(0, 32)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 13)
+		button.pressed.connect(func() -> void:
+			_active_mount = mount
+			_refresh())
+		mount_row.add_child(button)
+		_mount_buttons[mount] = button
+
+	container.add_child(_align_row("MOVE X", Vector3(-ALIGN_STEP, 0, 0), Vector3(ALIGN_STEP, 0, 0)))
+	container.add_child(_align_row("MOVE Y", Vector3(0, -ALIGN_STEP, 0), Vector3(0, ALIGN_STEP, 0)))
+	container.add_child(_align_row("MOVE Z", Vector3(0, 0, ALIGN_STEP), Vector3(0, 0, -ALIGN_STEP)))
 	container.add_child(_trim_row("BARREL PITCH", Vector3(-TRIM_STEP, 0, 0), Vector3(TRIM_STEP, 0, 0)))
 	container.add_child(_trim_row("BARREL YAW", Vector3(0, -TRIM_STEP, 0), Vector3(0, TRIM_STEP, 0)))
 
 	var reset := Button.new()
-	reset.text = "RESET ALIGNMENT"
+	reset.text = "RESET SELECTED PART"
 	reset.pressed.connect(func() -> void:
-		LoadoutManager.set_optic_offset(_shown_path(), Vector3.ZERO)
-		LoadoutManager.set_aim_trim(_shown_path(), Vector3.ZERO)
+		LoadoutManager.set_mount_offset(_shown_path(), _active_mount, Vector3.ZERO)
 		_refresh())
 	container.add_child(reset)
+
+	var reset_all := Button.new()
+	reset_all.text = "RESET ALL EDITS"
+	reset_all.pressed.connect(func() -> void:
+		var path := _shown_path()
+		LoadoutManager.set_optic_offset(path, Vector3.ZERO)
+		LoadoutManager.set_aim_trim(path, Vector3.ZERO)
+		for mount: String in MOUNT_REQUIRES:
+			LoadoutManager.set_mount_offset(path, mount, Vector3.ZERO)
+		_refresh())
+	container.add_child(reset_all)
 
 
 func _align_row(label_text: String, minus_delta: Vector3, plus_delta: Vector3) -> HBoxContainer:
@@ -286,7 +345,9 @@ func _align_row(label_text: String, minus_delta: Vector3, plus_delta: Vector3) -
 		var delta: Vector3 = pair[1]
 		button.pressed.connect(func() -> void:
 			var path := _shown_path()
-			LoadoutManager.set_optic_offset(path, LoadoutManager.get_optic_offset(path) + delta)
+			LoadoutManager.set_mount_offset(
+				path, _active_mount,
+				LoadoutManager.get_mount_offset(path, _active_mount) + delta)
 			_refresh())
 		row.add_child(button)
 	return row
@@ -371,9 +432,12 @@ func _update_preview(weapon: WeaponData, fitted := PackedStringArray()) -> void:
 	_preview_rig.optic_type = LoadoutManager.get_optic(weapon.resource_path)
 	_preview_rig.optic_offset = LoadoutManager.get_optic_offset(weapon.resource_path)
 	_preview_rig.aim_trim_deg = LoadoutManager.get_aim_trim(weapon.resource_path)
+	_preview_rig.mount_offsets = LoadoutManager.get_mount_offsets(weapon.resource_path)
 	_preview_rig.attachments = fitted
 	_preview_rig.target_length = weapon.view_length
 	_preview_rig.rotation.y = previous_yaw
 	_preview_holder.add_child(_preview_rig)
 	# The rig animates itself for first-person; the preview only rotates.
 	_preview_rig.set_process(false)
+	# Glow the selected part after the rig has built its meshes.
+	_preview_rig.highlight_mount.call_deferred(_active_mount)
